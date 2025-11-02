@@ -1,0 +1,104 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codex 配置面板</title>
+    <link rel="stylesheet" href="/static/index.css">
+</head>
+<body>
+<section class="login-screen" id="loginScreen">
+    <div class="login-card">
+        <div class="login-heading">
+            <h1>登录 Codex 仓库</h1>
+            <p>登录后可查看分配的端点与密钥。</p>
+        </div>
+        <form class="login-form" id="loginForm" autocomplete="off">
+            <div class="login-field">
+                <label for="loginUsername">用户名</label>
+                <input id="loginUsername" name="username" type="text" inputmode="email" placeholder="请输入用户名" required>
+            </div>
+            <div class="login-field">
+                <label for="loginPassword">密码</label>
+                <input id="loginPassword" name="password" type="password" placeholder="请输入密码" required>
+            </div>
+            <div class="login-action">
+                <button type="submit">登录</button>
+            </div>
+            <p class="login-message" id="loginMessage" aria-live="polite"></p>
+        </form>
+    </div>
+</section>
+<div id="appShell" hidden>
+    <header>
+        <div class="header-content">
+            <div class="branding">
+                <h1>Codex 配置</h1>
+            </div>
+            <div class="header-actions">
+                <div class="header-tabs" role="tablist" aria-label="页面切换">
+                    <button class="tab-btn tab-active" type="button" data-target="configPage" aria-controls="configPage" aria-selected="true">Codex 配置</button>
+                    <button class="tab-btn" type="button" data-target="sampleSection" aria-controls="sampleSection" aria-selected="false">使用教程</button>
+                </div>
+                <button class="logout-btn" id="logoutBtn" type="button">退出登录</button>
+            </div>
+        </div>
+    </header>
+    <main>
+        <section class="page-section sample-section is-hidden" id="sampleSection" hidden>
+            <div class="tutorial">
+                <section class="tutorial-env" id="tutorialEnv" aria-labelledby="tutorialEnvHeading">
+                    <div class="env-heading">
+                        <h3 id="tutorialEnvHeading">配置 Codex 环境变量</h3>
+                        <p>如果你使用支持 OpenAI API 的工具（如 Codex），需要设置以下环境变量：</p>
+                    </div>
+                    在 ~/.codex/config.toml 文件开头添加以下配置：
+                    <div class="code-block" role="presentation">
+                        <button class="code-copy" type="button" data-copy="model_provider = &quot;crs&quot;&#10;model = &quot;gpt-5-codex&quot;&#10;model_reasoning_effort = &quot;high&quot;&#10;disable_response_storage = true&#10;preferred_auth_method = &quot;apikey&quot;&#10;[model_providers.crs]&#10;name = &quot;crs&quot;&#10;base_url = &quot;https://www.openai.xyz/openai&quot;&#10;wire_api = &quot;responses&quot;&#10;requires_openai_auth = true&#10;env_key = &quot;CRS_OAI_KEY&quot;" aria-label="复制 config.toml 示例">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                <path d="M5 5.5A1.5 1.5 0 0 1 6.5 4h6A1.5 1.5 0 0 1 14 5.5v6A1.5 1.5 0 0 1 12.5 13h-6A1.5 1.5 0 0 1 5 11.5v-6Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M3.5 11.5A1.5 1.5 0 0 1 2 10V4A1.5 1.5 0 0 1 3.5 2.5h6A1.5 1.5 0 0 1 11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </button>
+                        <pre><code>model_provider = "crs"
+model = "gpt-5-codex"
+model_reasoning_effort = "high"
+disable_response_storage = true
+preferred_auth_method = "apikey"
+[model_providers.crs]
+name = "crs"
+base_url = "https://www.openai.xyz/openai"
+wire_api = "responses"
+requires_openai_auth = true
+env_key = "CRS_OAI_KEY"</code></pre>
+                    </div>
+                    在 ~/.codex/auth.json 文件中配置API密钥：
+                    <div class="code-block" role="presentation">
+                        <button class="code-copy" type="button" data-copy="{&#10;    &quot;OPENAI_API_KEY&quot;: null&#10;}" aria-label="复制 auth.json 示例">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                <path d="M5 5.5A1.5 1.5 0 0 1 6.5 4h6A1.5 1.5 0 0 1 14 5.5v6A1.5 1.5 0 0 1 12.5 13h-6A1.5 1.5 0 0 1 5 11.5v-6Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M3.5 11.5A1.5 1.5 0 0 1 2 10V4A1.5 1.5 0 0 1 3.5 2.5h6A1.5 1.5 0 0 1 11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </button>
+                        <pre><code>{
+    "OPENAI_API_KEY": null
+}</code></pre>
+                    </div>
+                </section>
+            </div>
+        </section>
+        <section class="page-section config-section" id="configPage">
+            <div class="config-grid" id="configGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px;"></div>
+        </section>
+    </main>
+</div>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="/static/index.js" defer></script>
+</body>
+</html>
+
+
+
+
+
+

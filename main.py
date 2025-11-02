@@ -1,0 +1,86 @@
+import hashlib
+import os
+import time
+
+import pandas as pd
+import uvicorn
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from sqlalchemy import create_engine
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class ApiResponse(BaseModel):
+    status: int
+    msg: str
+    data: str | dict | list = None
+
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+load_dotenv('.env')
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.get("/")
+async def index():
+    return FileResponse('static/index.html')
+
+
+@app.post('/api/login', response_model=ApiResponse)
+async def login(request: LoginRequest):
+    result = True if request.username == os.getenv('CODEX_USERNAME') and request.password == os.getenv(
+        'CODEX_PASSWORD') else False
+
+    data = os.getenv('TOKEN_PREFIX') + str(int(time.time()) + int(os.getenv("TOKEN_EXPIRE")))
+    data += "_" + hashlib.md5(data.encode()).hexdigest()
+    return ApiResponse(status=200 if result else 401, msg='ok' if result else 'error', data=data if result else None)
+
+
+async def AuthMiddleware(request: Request):
+    token = request.headers.get('codex-token')
+    if not token:
+        raise HTTPException(status_code=401, detail={"status": 401, "msg": "token 缺失"})
+
+    try:
+        tokens = token.split("_")
+        if int(tokens[1]) < int(time.time()):
+            raise HTTPException(status_code=401, detail={"status": 401, "msg": "token 已过期"})
+
+        if hashlib.md5(f"{tokens[0]}_{tokens[1]}".encode()).hexdigest() != tokens[2]:
+            raise HTTPException(status_code=401, detail={"status": 401, "msg": "无效的 token"})
+
+        return None
+    except (IndexError, ValueError) as e:
+        raise HTTPException(status_code=401, detail={"status": 401, "msg": "token 格式无效"})
+
+
+@app.get("/api/codex_configs", response_model=ApiResponse, dependencies=[Depends(AuthMiddleware)])
+async def configs():
+    engine = create_engine(
+        f'mysql+pymysql://{os.getenv("db_username")}:{os.getenv("db_password")}@{os.getenv("db_host")}:{os.getenv("db_port")}/{os.getenv("db_database")}?charset=utf8',
+        echo=False)
+
+    df = pd.read_sql('SELECT `name`, `url`, `base_url` AS `baseUrl`, `token`, `status` FROM `configs`', con=engine)
+    return ApiResponse(status=200, msg='ok', data=df.to_dict('records'))
+
+
+if __name__ == '__main__':
+    uvicorn.run(app, host="0.0.0.0", port=8001)

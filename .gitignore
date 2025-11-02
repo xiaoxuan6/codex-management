@@ -1,0 +1,5 @@
+.idea/
+.env
+AGENTS.md
+__pycache__/
+configs.sql
