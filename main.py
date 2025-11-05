@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 
 class LoginRequest(BaseModel):
@@ -25,6 +25,10 @@ class ConfigRequest(BaseModel):
     token: str
     source: str = None
     status: int = 1
+
+
+class UpdateConfigRequest(BaseModel):
+    id: int
 
 
 class ApiResponse(BaseModel):
@@ -87,7 +91,8 @@ async def configs():
         f'mysql+pymysql://{os.getenv("db_username")}:{os.getenv("db_password")}@{os.getenv("db_host")}:{os.getenv("db_port")}/{os.getenv("db_database")}?charset=utf8',
         echo=False)
 
-    df = pd.read_sql('SELECT `name`, `url`, `base_url` AS `baseUrl`, `token`, `status` FROM `configs`', con=engine)
+    df = pd.read_sql('SELECT `id`, `name`, `url`, `base_url` AS `baseUrl`, `token`, `status` FROM `configs`',
+                     con=engine)
     return ApiResponse(status=200, msg='ok', data=df.to_dict('records'))
 
 
@@ -112,6 +117,21 @@ async def AddConfig(request: ConfigRequest):
         return ApiResponse(status=200, msg='ok')
     except Exception as e:
         return ApiResponse(status=500, msg=str(e))
+
+
+@app.post('/api/config/update', response_model=ApiResponse, dependencies=[Depends(AuthMiddleware)])
+async def updateConfig(request: UpdateConfigRequest):
+    engine = create_engine(
+        f'mysql+pymysql://{os.getenv("db_username")}:{os.getenv("db_password")}@{os.getenv("db_host")}:{os.getenv("db_port")}/{os.getenv("db_database")}?charset=utf8',
+        echo=False)
+
+    with engine.connect() as conn:
+        update_stmt = text("UPDATE configs SET status = 1 - status WHERE id = :id")
+        result = conn.execute(update_stmt, {"id": request.id})
+        conn.commit()  # 提交更改
+        print(f"受影响行数: {result.rowcount}")
+
+        return ApiResponse(status=200, msg='ok')
 
 
 if __name__ == '__main__':

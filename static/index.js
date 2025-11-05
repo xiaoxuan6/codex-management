@@ -74,9 +74,12 @@ if (sessionStorage.getItem(LOGIN_KEY) === "true") {
     lockInterface();
 }
 
-function createCard({name, url, baseUrl, token, status}) {
+function createCard({id, name, url, baseUrl, token, status}) {
     const card = document.createElement("article");
     card.className = "config-card";
+    if (id !== undefined && id !== null) {
+        card.dataset.configId = String(id);
+    }
     const inferredStatus = normalizeStatus(status);
     if (inferredStatus !== null) {
         card.dataset.status = String(inferredStatus);
@@ -119,10 +122,41 @@ function createCard({name, url, baseUrl, token, status}) {
             </div>
         </div>
     `;
+    if (id !== undefined && id !== null) {
+        const hiddenId = document.createElement("span");
+        hiddenId.className = "config-id";
+        hiddenId.textContent = String(id);
+        hiddenId.hidden = true;
+        card.append(hiddenId);
+    }
     const statusButton = card.querySelector(".status-toggle-btn");
     if (statusButton) {
         statusButton.addEventListener("click", () => {
-            console.log("准备修改状态:", name);
+            const configId = card.dataset.configId ?? card.querySelector(".config-id")?.textContent ?? "";
+            if (!configId) {
+                console.warn("未找到对应的配置 ID", {name, url});
+                return;
+            }
+            axios.post('/api/config/update', {
+                id: configId
+            }, {
+                headers: {
+                    'codex-token': sessionStorage.getItem(TOKEN_KEY)
+                }
+            })
+                .then(function (response) {
+                    if (response.data.status === 200) {
+                        Notiflix.Notify.success('更新成功');
+                        setTimeout(function () {
+                            loadData()
+                        }, 1000)
+                    } else {
+                        Notiflix.Notify.failure('更新失败');
+                    }
+                })
+                .catch(function (error) {
+                    Notiflix.Notify.failure('更新失败：' + error);
+                });
         });
     }
     return card;
@@ -375,7 +409,7 @@ addConfigForm?.addEventListener("submit", (event) => {
                 Notiflix.Notify.success('添加成功');
                 closeAddConfigModal();
                 addConfigForm.reset();
-                setInterval(function () {
+                setTimeout(function () {
                     loadData()
                 }, 1000)
             } else {
