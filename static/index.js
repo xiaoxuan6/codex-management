@@ -7,6 +7,24 @@ const loginForm = document.getElementById("loginForm");
 const loginMessage = document.getElementById("loginMessage");
 const logoutBtn = document.getElementById("logoutBtn");
 const tabButtons = document.querySelectorAll(".tab-btn");
+const addConfigBtn = document.getElementById("addConfigBtn");
+const addConfigModal = document.getElementById("addConfigModal");
+const addConfigForm = document.getElementById("addConfigForm");
+const configHintCopyBtn = document.querySelector(".config-hint__copy-btn");
+const configHintCode = document.querySelector(".config-hint__code");
+const CONFIG_HINT_COPY_DEFAULT_ICON = configHintCopyBtn?.innerHTML ?? "";
+const CONFIG_HINT_COPY_DEFAULT_LABEL = configHintCopyBtn?.getAttribute("aria-label") ?? "复制命令";
+const CONFIG_HINT_COPY_SUCCESS_ICON = `
+    <svg class="config-hint__copy-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M3.5 8.2L6.3 11l6.2-6.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+`;
+const CONFIG_HINT_COPY_ERROR_ICON = `
+    <svg class="config-hint__copy-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"></circle>
+        <path d="M6 6l4 4M10 6l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+`;
 const TAB_CONFIG = "configPage";
 const TAB_SAMPLE = "sampleSection";
 const sampleSection = document.getElementById("sampleSection");
@@ -65,6 +83,12 @@ function createCard({name, url, baseUrl, token, status}) {
         card.classList.add(inferredStatus ? "config-card--status-true" : "config-card--status-false");
     }
     card.innerHTML = `
+        <button class="status-toggle-btn" type="button" aria-label="修改状态">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M9 16c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 5v4l2.5 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
         <div class="config-title">
             <h2>
                 <a class="config-link" href="${url}" target="_blank" rel="noopener noreferrer">${name}</a>
@@ -95,6 +119,12 @@ function createCard({name, url, baseUrl, token, status}) {
             </div>
         </div>
     `;
+    const statusButton = card.querySelector(".status-toggle-btn");
+    if (statusButton) {
+        statusButton.addEventListener("click", () => {
+            console.log("准备修改状态:", name);
+        });
+    }
     return card;
 }
 
@@ -146,6 +176,32 @@ function attachCopyHandlers(root) {
         });
     });
 }
+
+configHintCopyBtn?.addEventListener("click", async () => {
+    if (!configHintCode) {
+        return;
+    }
+    const command = configHintCode.textContent.trim();
+    configHintCopyBtn.disabled = true;
+    try {
+        await copyText(command);
+        configHintCopyBtn.innerHTML = CONFIG_HINT_COPY_SUCCESS_ICON;
+        configHintCopyBtn.setAttribute("aria-label", "复制成功");
+        configHintCopyBtn.classList.add("config-hint__copy-btn--copied");
+    } catch (error) {
+        console.error("Copy command failed", error);
+        configHintCopyBtn.innerHTML = CONFIG_HINT_COPY_ERROR_ICON;
+        configHintCopyBtn.setAttribute("aria-label", "复制失败");
+        configHintCopyBtn.classList.remove("config-hint__copy-btn--copied");
+    } finally {
+        setTimeout(() => {
+            configHintCopyBtn.innerHTML = CONFIG_HINT_COPY_DEFAULT_ICON;
+            configHintCopyBtn.setAttribute("aria-label", CONFIG_HINT_COPY_DEFAULT_LABEL);
+            configHintCopyBtn.classList.remove("config-hint__copy-btn--copied");
+            configHintCopyBtn.disabled = false;
+        }, 1600);
+    }
+});
 
 loginForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -250,6 +306,9 @@ function loadData() {
     })
         .then(function (response) {
             if (response.data.status === 200) {
+                if (configGrid) {
+                    configGrid.innerHTML = "";
+                }
                 response.data.data.forEach((config) => {
                     const card = createCard(config);
                     configGrid.append(card);
@@ -267,8 +326,59 @@ function loadData() {
         });
 }
 
+function openAddConfigModal() {
+    if (!addConfigModal) {
+        return;
+    }
+    addConfigModal.hidden = false;
+    addConfigModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    const firstField = addConfigModal.querySelector("input, select, textarea");
+    firstField?.focus();
+}
 
+function closeAddConfigModal() {
+    if (!addConfigModal) {
+        return;
+    }
+    addConfigModal.hidden = true;
+    addConfigModal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+}
 
+addConfigBtn?.addEventListener("click", () => {
+    openAddConfigModal();
+});
 
+addConfigForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const formData = new FormData(addConfigForm);
+    const payload = {
+        name: (formData.get("name") ?? "").trim(),
+        url: (formData.get("url") ?? "").trim(),
+        baseUrl: (formData.get("baseurl") ?? "").trim(),
+        apiToken: (formData.get("apitoken") ?? "").trim(),
+        source: (formData.get("source") ?? "").trim()
+    };
+    console.log("新增配置提交数据:", payload);
+    closeAddConfigModal();
+    addConfigForm.reset();
+});
 
+(addConfigModal?.querySelectorAll("[data-modal-close]") ?? []).forEach((btn) => {
+    btn.addEventListener("click", () => {
+        closeAddConfigModal();
+    });
+});
 
+addConfigModal?.addEventListener("click", (event) => {
+    if (event.target === addConfigModal) {
+        closeAddConfigModal();
+    }
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && addConfigModal && !addConfigModal.hidden) {
+        closeAddConfigModal();
+    }
+});

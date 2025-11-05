@@ -196,6 +196,27 @@ header {
     color: #ffffff;
     box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
 }
+.add-config-btn {
+    border: none;
+    padding: 10px 22px;
+    border-radius: 12px;
+    background: var(--surface-muted);
+    color: var(--accent-dark);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+.add-config-btn:hover {
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--accent);
+    box-shadow: 0 12px 26px rgba(37, 99, 235, 0.16);
+}
+.add-config-btn:active {
+    box-shadow: none;
+}
 .logout-btn {
     border: none;
     padding: 10px 20px;
@@ -354,7 +375,74 @@ main {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 24px;
 }
+.config-hint {
+    margin-bottom: 16px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--accent-dark);
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+}
+.config-hint__command {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+.config-hint__code {
+    display: inline-block;
+    padding: 4px 38px 4px 10px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.78);
+    color: #f8fafc;
+    font-family: "JetBrains Mono", "Consolas", "Courier New", monospace;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.config-hint__copy-btn {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: rgba(226, 232, 240, 0.88);
+    cursor: pointer;
+    transition: color 0.18s ease, transform 0.18s ease;
+}
+.config-hint__copy-btn:hover {
+    color: #f8fafc;
+}
+.config-hint__copy-btn:active {
+    transform: translate(0, calc(-50% + 1px));
+}
+.config-hint__copy-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+    border-radius: 4px;
+}
+.config-hint__copy-btn--copied {
+    color: #22c55e;
+}
+.config-hint__copy-btn svg {
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+}
 .config-card {
+    position: relative;
     background: var(--surface);
     border: 2px solid var(--border-strong);
     border-radius: calc(var(--radius) + 2px);
@@ -372,6 +460,38 @@ main {
 }
 .config-card--status-false {
     border-color: #dc2626;
+}
+.status-toggle-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--accent);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.config-card:hover .status-toggle-btn,
+.config-card:focus-within .status-toggle-btn {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+.status-toggle-btn:hover {
+    box-shadow: 0 18px 38px rgba(37, 99, 235, 0.26);
+}
+.status-toggle-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
 }
 .config-title {
     display: flex;
@@ -462,6 +582,169 @@ main {
     transform: translateY(0);
     box-shadow: 0 10px 18px rgba(37, 99, 235, 0.28);
 }
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    z-index: 60;
+    backdrop-filter: blur(4px);
+}
+.modal-overlay[hidden] {
+    display: none;
+}
+.modal-card {
+    width: min(520px, 100%);
+    background: var(--surface);
+    border-radius: calc(var(--radius) + 2px);
+    border: 1px solid var(--border);
+    box-shadow: 0 32px 80px rgba(15, 23, 42, 0.3);
+    display: flex;
+    flex-direction: column;
+    padding: 28px;
+    gap: 20px;
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.modal-header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+}
+.modal-close {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--muted);
+    transition: color 0.16s ease;
+}
+.modal-close:hover {
+    color: var(--accent);
+}
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+.modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.modal-field[data-span="2"] {
+    width: 100%;
+}
+.field-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.modal-field label {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    text-transform: uppercase;
+}
+.required-marker {
+    color: #dc2626;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+}
+.modal-field input {
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-muted);
+    font-size: 14px;
+    font-family: inherit;
+    width: 100%;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+.modal-field input::placeholder {
+    color: rgba(100, 116, 139, 0.8);
+}
+.modal-field input:hover {
+    border-color: rgba(37, 99, 235, 0.45);
+}
+.modal-field input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    background: #ffffff;
+}
+.field-hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.field-heading .field-hint {
+    font-size: 11px;
+}
+#configToken {
+    font-family: "JetBrains Mono", "Consolas", "Courier New", monospace;
+    letter-spacing: 0.02em;
+}
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+.primary-btn {
+    border: none;
+    padding: 10px 22px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.28);
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.primary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 32px rgba(37, 99, 235, 0.36);
+}
+.primary-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 12px 20px rgba(37, 99, 235, 0.28);
+}
+.secondary-btn {
+    border: 1px solid var(--border);
+    padding: 10px 22px;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+}
+.secondary-btn:hover {
+    color: var(--text);
+    border-color: var(--accent);
+    background: rgba(37, 99, 235, 0.08);
+}
 @media (max-width: 1280px) {
     .config-grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -551,6 +834,7 @@ main {
 .code-copy:active {
     transform: translateY(0);
 }
+
 
 
 
