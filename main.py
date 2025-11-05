@@ -18,6 +18,15 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class ConfigRequest(BaseModel):
+    name: str
+    url: str
+    baseUrl: str
+    token: str
+    source: str = None
+    status: int = 1
+
+
 class ApiResponse(BaseModel):
     status: int
     msg: str
@@ -80,6 +89,29 @@ async def configs():
 
     df = pd.read_sql('SELECT `name`, `url`, `base_url` AS `baseUrl`, `token`, `status` FROM `configs`', con=engine)
     return ApiResponse(status=200, msg='ok', data=df.to_dict('records'))
+
+
+@app.post('/api/add/config', response_model=ApiResponse, dependencies=[Depends(AuthMiddleware)])
+async def AddConfig(request: ConfigRequest):
+    try:
+        engine = create_engine(
+            f'mysql+pymysql://{os.getenv("db_username")}:{os.getenv("db_password")}@{os.getenv("db_host")}:{os.getenv("db_port")}/{os.getenv("db_database")}?charset=utf8',
+            echo=False)
+
+        data = {
+            'name': [request.name],
+            'url': [request.url],
+            'base_url': [request.baseUrl],
+            'token': [request.token],
+            'source': [request.source],
+            'status': [request.status],
+        }
+        df = pd.DataFrame(data)
+        df.to_sql('configs', con=engine, if_exists='append', index=False)
+
+        return ApiResponse(status=200, msg='ok')
+    except Exception as e:
+        return ApiResponse(status=500, msg=str(e))
 
 
 if __name__ == '__main__':

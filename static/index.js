@@ -301,6 +301,7 @@ if (sampleSection) {
 }
 
 function loadData() {
+    NProgress.start();
     axios.get('/api/codex_configs', {
         headers: {'codex-token': sessionStorage.getItem(TOKEN_KEY)}
     })
@@ -314,12 +315,15 @@ function loadData() {
                     configGrid.append(card);
                     attachCopyHandlers(card);
                 });
+                NProgress.done();
             } else {
+                NProgress.done();
                 sessionStorage.removeItem(LOGIN_KEY)
                 lockInterface()
             }
         })
         .catch(function (error) {
+            NProgress.done();
             console.log(error);
             sessionStorage.removeItem(LOGIN_KEY)
             lockInterface()
@@ -352,17 +356,34 @@ addConfigBtn?.addEventListener("click", () => {
 
 addConfigForm?.addEventListener("submit", (event) => {
     event.preventDefault();
+
     const formData = new FormData(addConfigForm);
     const payload = {
         name: (formData.get("name") ?? "").trim(),
         url: (formData.get("url") ?? "").trim(),
         baseUrl: (formData.get("baseurl") ?? "").trim(),
-        apiToken: (formData.get("apitoken") ?? "").trim(),
-        source: (formData.get("source") ?? "").trim()
+        token: (formData.get("apitoken") ?? "").trim(),
+        source: (formData.get("source") ?? "").trim(),
     };
-    console.log("新增配置提交数据:", payload);
-    closeAddConfigModal();
-    addConfigForm.reset();
+    axios.post('/api/add/config', payload, {
+        headers: {
+            'codex-token': sessionStorage.getItem(TOKEN_KEY)
+        }
+    })
+        .then(function (resp) {
+            if (resp.data.status === 200) {
+                Notiflix.Notify.success('添加成功');
+                closeAddConfigModal();
+                addConfigForm.reset();
+                setInterval(function () {
+                    loadData()
+                }, 1000)
+            } else {
+                Notiflix.Notify.failure('添加失败');
+            }
+        }).catch(function (error) {
+        Notiflix.Notify.failure('添加失败: ' + error);
+    });
 });
 
 (addConfigModal?.querySelectorAll("[data-modal-close]") ?? []).forEach((btn) => {
